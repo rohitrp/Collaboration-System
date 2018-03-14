@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from rolepermissions.roles import assign_role
 from UserRolesPermission.roles import GroupAdmin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from InappropriateContentFilter.views import inappropriate_content_filter
 
 def create_group(request):
 	if request.method == 'POST':
@@ -91,12 +92,19 @@ def group_article_create(request):
 			status = request.POST['status']
 			gid = request.POST['gid']
 			group = Group.objects.get(pk=gid)
-			if status=='1':
+
+			title = request.POST.get('title', '')
+			body = request.POST.get('body', '')
+
+			res = inappropriate_content_filter(title, body)
+
+			if status=='1' and not res['inappropriate']:
 				article = create_article(request)
 				obj = GroupArticles.objects.create(article=article, user=request.user, group=group)
 				return redirect('article_view', article.pk)
 			else:
-				return render(request, 'new_article.html', {'group':group, 'status':1})
+				request.POST.articleof = 'group'
+				return render(request, 'new_article.html', {'group':group, 'status':1, 'inappropriate_words': res['inappropriate_words'], 'body': body, 'title': title})
 		else:
 			return redirect('home')
 	else:

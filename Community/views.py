@@ -17,8 +17,7 @@ from django.contrib.auth.models import User
 from workflow.models import States
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-# Create your views here.
-
+from InappropriateContentFilter.views import inappropriate_content_filter
 
 def display_communities(request):
 	if request.method == 'POST':
@@ -91,12 +90,19 @@ def community_article_create(request):
 			status = request.POST['status']
 			cid = request.POST['cid']
 			community = Community.objects.get(pk=cid)
-			if status=='1':
+
+			title = request.POST.get('title', '')
+			body = request.POST.get('body', '')
+
+			res = inappropriate_content_filter(title, body)
+
+			if status=='1' and not res['inappropriate']:
 				article = create_article(request)
 				obj = CommunityArticles.objects.create(article=article, user = request.user , community =community )
 				return redirect('article_view', article.pk)
 			else:
-				return render(request, 'new_article.html', {'community':community, 'status':1})
+				request.POST.articleof = 'community'
+				return render(request, 'new_article.html', {'community':community, 'status':1, 'inappropriate_words': res['inappropriate_words'], 'body': body, 'title': title})
 		else:
 			return redirect('home')
 	else:
