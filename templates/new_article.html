@@ -25,12 +25,12 @@
   {% csrf_token %}
   <div class="form-group">
     <label for="title">Title</label>
-    <input type="text" class="form-control" id="title" name="title" placeholder="give a title to the content" required>
+    <input type="text" class="form-control" id="title" name="title" placeholder="give a title to the content" value="{{title}}" required>
     <div class="invalid-feedback"></div>
   </div>
   <div class="form-group">
     <label for="body">Body</label>
-    <textarea id ="editor" class="form-control" name="body" ></textarea>
+    <textarea id ="editor" class="form-control" name="body">{{body}}</textarea>
       {% if request.POST.articleof == 'group' %}
         <input type = 'hidden' name = 'gid' value = {{group.pk}}>
         {% endif %}
@@ -43,6 +43,13 @@
     <label for="image">Upload Image</label>
     <input type="file"   name ="article_image" class="file" data-allowed-file-extensions='["jpeg", "jpg","png"]' data-show-upload="false" data-msg-placeholder="Select article image for upload...">
   </div>
+  {% if inappropriate_words %}
+  <div>
+    <p>The article contained following inappropriate words: </p>
+    {{ inappropriate_words }}
+  </div>
+  {% endif %}
+  <br>
   {% if status == 1 %}
   <button type="submit" class="btn btn-primary">Create</button>
   {% endif %}
@@ -54,9 +61,11 @@
 
 <script src="https://cdn.ckeditor.com/ckeditor5/1.0.0-alpha.2/classic/ckeditor.js"></script>
 <script>
+      var ckEditor;
       ClassicEditor
         .create( document.querySelector( '#editor' ) )
         .then( editor => {
+          ckEditor = editor;
           console.log( editor );
         } )
         .catch( error => {
@@ -64,6 +73,7 @@
         } );
     </script>
 <script src="{% static 'js/jquery-3.2.1.min.js'  %}"></script>
+<script src="{% static 'js/inappropriate_content_filter.js' %}"></script>
 <script src="{% static 'js/bootstrap_fileinput/piexif.min.js' %}"></script>
 <script src="{% static 'js/bootstrap_fileinput/purify.min.js' %}"></script>
 <script src="{% static 'js/bootstrap_fileinput/sortable.min.js' %}"></script>
