@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% load mptt_tags %}
+
+{% block breadcrumb %}
+  <li class="breadcrumb-item active"><a href="{% url 'community_view' course.community.pk %}"> {{ course.community.name }} </a></li>
+  <li class="breadcrumb-item active">{{ course.course.name }} </li>
+{% endblock %}
+{% block content %}
+<div class="container-fluid ">
+  <div class="row">
+    <div class="col-sm-12">
+      <div>
+      <ul class="nav nav-tabs">
+        <li class="nav-item active">
+          <a class="nav-link " href="{% url 'course_view' course.course.pk %}">View</a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item ">
+          <a class="nav-link " href="#">Edit</a>
+        </li>
+        {% endif %}
+      </ul>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <br/>
+      <div class="blog-item">
+        <h3><a href="#">Topics for {{ course.course.name }} </a></h3>
+            <ul>
+                {% recursetree topics %}
+                    <li><p>
+                      <form id="updatetopic" method="post" action="{% url 'course_edit' course.course.pk %}">
+                        {% csrf_token %}
+                        <input type='hidden' name='status' value='update'>
+                        <input type='hidden' name='nodeid' value = {{node.id}}>
+                        <input type='text' id='txt{{node.id}}' name='name{{node.id}}' onclick='saveTopic({{node.id}})' style='border:0px' value = {{node.name}} />
+                      </form>
+                        {% if not node.is_leaf_node %}
+                            <ul class="children">
+                                {{ children }}
+                            </ul>
+                        {% endif %}
+                    </p></li>
+                {% endrecursetree %}
+            </ul>
+      </div>
+    </div>
+    <div class="col-sm-4"><br />
+      <h3><a href="#">Add Topic </a></h3>
+      <form id="newtopic" method="post" novalidate>
+          {% csrf_token %}
+          <table>
+            {{ form.as_p }}
+          </table>
+          {% csrf_token %}
+          <input type="hidden" name="status" value="addtopic">
+          <button type="submit">Save</button>
+        </form>
+    </div>
+    <div class="col-sm-4"><br />
+      <h3><a href="#">Move Topics</a></h3>
+      <form method="post" >
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="topic">Topic:</label>
+
+          <select id="topic" name="topic" onChange="loadTopics()">
+            {% recursetree topics %}
+              <option value = {{ node.id }}> {{node.name}} </option>
+              {% if not node.is_leaf_node %}
+                {{ children }}
+              {% endif %}
+            {% endrecursetree %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="moving">Move To:</label>
+          <select id="parent" name="parent">
+          </select>
+        </div>
+        <input type="hidden" name="status" value="movetopic" />
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+function saveTopic(nodeid) {
+      document.getElementById("txt"+nodeid).addEventListener("keydown", function(e) {
+          if (!e) { var e = window.event; }
+          e.preventDefault(); // sometimes useful
+
+          // Enter is pressed
+          if (e.keyCode == 13) { submitForm(); }
+      }, false);
+}
+
+function submitForm(){
+    document.updatetopic.submit();
+    document.updatetopic.method='post';
+}
+
+function loadTopics(){
+    var selectedTopic = document.getElementById("topic").value;
+    var topicList= document.getElementById("topic");
+    document.getElementById('parent').innerHTML = "";
+    var sel = document.getElementById('parent');
+    for(i=0; i<topicList.options.length;i++){
+        if (! (selectedTopic == topicList.options[i].value)) {
+            var opt = document.createElement('option');
+            opt.innerHTML = topicList.options[i].innerHTML;
+            opt.value = topicList.options[i].value;
+            sel.appendChild(opt);
+        }
+    }
+}
+</script>
+
+{% endblock %}
