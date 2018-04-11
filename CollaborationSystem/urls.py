@@ -132,6 +132,9 @@ urlpatterns = [
     url(r'^community-course-create/$', communityview.community_course_create, name='community_course_create'),
     url(r'^course-view/(?P<pk>\d*)/$', courseview.course_view, name='course_view'),
     url(r'^course-edit/(?P<pk>\d*)/$', courseview.course_edit, name='course_edit'),
+    url(r'^manage-resource/(?P<pk>\d+)/$', courseview.manage_resource, name='manage_resource'),
+
+    url(r'api/course/', include('Course.api.urls', namespace = 'api-course')),
 
 ]
 

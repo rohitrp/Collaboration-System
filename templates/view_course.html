@@ -1,14 +1,30 @@
 {% extends 'base.html' %}
+{%load static %}
+{% block css %}
+<link href="{% static 'css/fileinput.min.css' %}" rel="stylesheet">
+<link href="{% static 'assets/plugins/css/style.css' %}" rel="stylesheet"  />
+<link href="{% static 'assets/plugins/css/jquerysctipttop.css' %}" rel="stylesheet" />
+<link href="{% static 'assets/plugins/lib/jquery.ntm/themes/default/css/theme.css' %}" rel="stylesheet" />
+<style type="text/css">
+  #liclr{
+background-color:#FE642E;
+
+  }
+  #clr{
+    color:black;
+  }
+</style>
+{% endblock %}
+
 {% load mptt_tags %}
 
 {% block breadcrumb %}
   <li class="breadcrumb-item active"><a href="{% url 'community_view' course.community.pk %}"> {{ course.community.name }} </a></li>
-  <li class="breadcrumb-item active">{{ course.course.name }} </li>
+  <li class="breadcrumb-item active">{{ course.course.title }} </li>
 {% endblock %}
 {% block content %}
 <div class="container-fluid ">
   <div class="row">
-    <div class="col-sm-4">
       <div>
       <ul class="nav nav-tabs">
         <li class="nav-item active">
@@ -18,16 +34,28 @@
         <li class="nav-item ">
           <a class="nav-link " href="{% url 'course_edit' course.course.pk %}">Edit</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'manage_resource' course.course.pk %}">Manage Resource </a>
+        </li>
         {% endif %}
       </ul>
       </div>
       <br/>
+    <div class="col-sm-4">
       <div class="blog-item">
-        <h2><a href="#">{{ course.course.name }} </a></h2>
-        <ul>
+        <h2><a href="#">{{ course.course.title }} </a></h2>
+      </div>
+      <div style="margin-right: 0px;height:450px; overflow: scroll; ">
+       <div class="tree-menu demo" id="tree-menu" style="margin-left: 0px;">
+
+        <ul >
             {% recursetree topics %}
-                <li>
-                    {{ node.name }}
+                <li><a href="#" ><form id="viewresources" method="post" action="{% url 'course_view' course.course.pk %}">
+                  {% csrf_token %}
+                 <input type="hidden" id="nodeid" name="nodeid" value = {{node.id}} >
+                  <input type="submit" class="btn btn-link" value =" {{node.name}} ">
+                </form>
+                    </a>
                     {% if not node.is_leaf_node %}
                         <ul class="children">
                             {{ children }}
@@ -36,12 +64,37 @@
                 </li>
             {% endrecursetree %}
         </ul>
-      </div>
+          </div>
+        </div>
     </div>
-    <div class="col-sm-8"><br/><br/>
-      content
+    <div class="col-sm-8">
+ <nav id="menu" class="nav-main">
+<ul class="nav nav-pills nav-justified inverse" style=" overflow: auto;
+    white-space: nowrap;">
+    {% for links in links %}
+    {% if links.types == 'Youtube' %}
+  <li role="presentation" ><a href="{{links.link}}" target="frame1"><i  class="fa fa-youtube" style="font-size: 20px;"></i></a></li>
+  {% else %}
+  <li role="presentation" ><a href="{{link.link}}" target="frame1"><i  class="fa fa-link" style="font-size: 20px;"></i></a></li>
+  {%endif%}
+{% endfor %}
+  </ul>
+ </nav>
     </div>
+    <br />
+   <iframe width="560" height="315" src="{{link.link}}" name="frame1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+   {{link.desc}}
   </div>
 </div>
+
+{% endblock %}
+{% block javascript %}
+        <script type="text/javascript" src="{% static 'assets/plugins/lib/jquery.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'assets/plugins/lib/jquery.ntm/js/jquery.ntm.js' %}"></script>
+ <script type="text/javascript">
+            $(document).ready(function() {
+                $('.demo').ntm();
+            });
+        </script>
 
 {% endblock %}
