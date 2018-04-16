@@ -1,5 +1,8 @@
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![CodeFactor](https://www.codefactor.io/repository/github/fresearchgroup/collaboration-system/badge)](https://www.codefactor.io/repository/github/fresearchgroup/collaboration-system)
+[![Build Status](https://travis-ci.org/fresearchgroup/Collaboration-System.svg?branch=develop)](https://travis-ci.org/fresearchgroup/Collaboration-System)
 
-                                    COLLABORATION SYSTEM
+COLLABORATION SYSTEM
 
         Requiremnets -
 
@@ -126,7 +129,3 @@ After installing django -reversion compare module, copy the patch file from 'tem
  mysql -u root -p  (and select the database that is created and run the following sql query)
  
  ALTER TABLE BasicArticle_articles MODIFY COLUMN body text CHARACTER SET utf8 COLLATE utf8_general_ci NULL;
-
- Git:
-
- Created a develop branch
