@@ -68,6 +68,7 @@ urlpatterns = [
     url(r'^group-subscribe/$', group_views.group_subscribe, name='group_subscribe'),
     url(r'^group-unsubscribe/$', group_views.group_unsubscribe, name='group_unsubscribe'),
     url(r'^group-article-create/$', group_views.group_article_create, name='group_article_create'),
+    url(r'^handle-group-invitations/$', group_views.handle_group_invitations, name='handle_group_invitations'),
 
     url(r'^forum/', include(board.urls)),
     url(r'^registrationapi/$', user_viewsets.RegistrationViewsets.as_view(), name='account-create'),
@@ -128,11 +129,13 @@ urlpatterns = [
 
     url(r'^check_user/$', user_views.username_exist, name ='check_user' ),
     url(r'^favourites/$', user_views.favourites, name ='favourites' ),
+    url(r'^group-invitations/$', user_views.group_invitations, name='group_invitations'),
 
     url(r'^community-course-create/$', communityview.community_course_create, name='community_course_create'),
     url(r'^course-view/(?P<pk>\d*)/$', courseview.course_view, name='course_view'),
     url(r'^course-edit/(?P<pk>\d*)/$', courseview.course_edit, name='course_edit'),
     url(r'^manage-resource/(?P<pk>\d+)/$', courseview.manage_resource, name='manage_resource'),
+    url(r'^update-course-info/(?P<pk>\d+)/$', courseview.update_course_info, name='update_course_info'),
 
     url(r'api/course/', include('Course.api.urls', namespace = 'api-course')),
 

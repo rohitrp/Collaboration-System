@@ -5,7 +5,7 @@ from BasicArticle.models import Articles
 from .forms import SignUpForm
 from .roles import Author
 from rolepermissions.roles import assign_role
-from Group.models import GroupMembership, GroupArticles, Group
+from Group.models import GroupMembership, GroupArticles, Group, GroupInvitations
 from django.contrib.auth.models import User
 from workflow.models import States
 from Community.models import Community
@@ -18,6 +18,7 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from django.core import serializers
 from datetime import date
 
 def signup(request):
@@ -73,29 +74,13 @@ def user_dashboard(request):
             user_profile = "No Image available"
 
         mycommunities = CommunityMembership.objects.filter(user=request.user).order_by('community__name')
-        page = request.GET.get('page', 1)
-        paginator = Paginator(mycommunities, 5)
-        try:
-            communities = paginator.page(page)
-        except PageNotAnInteger:
-            communities = paginator.page(1)
-        except EmptyPage:
-            communities = paginator.page(paginator.num_pages)
-
         mygroups = GroupMembership.objects.filter(user=request.user).order_by('group__name')
-        page = request.GET.get('page2',1)
-        paginator = Paginator(mygroups, 5)
-        try:
-            groups = paginator.page(page)
-        except PageNotAnInteger:
-            groups = paginator.page(1)
-        except EmptyPage:
-            groups = paginator.page(paginator.num_pages)
 
         commarticles = CommunityArticles.objects.filter(user=request.user)
         grparticles = GroupArticles.objects.filter(user=request.user)
 
         pendingcommunities=RequestCommunityCreation.objects.filter(status='Request', requestedby=request.user)
+        grpinvitations = GroupInvitations.objects.filter(status='Invited', user=request.user)
 
         ap = User.objects.raw(
         'Select 1 id, Year, Sum(JAN) JAN,sum(FEB) FEB,sum(MAR) MAR,sum(APR) APR,sum(MAY) MAY,sum(JUN) JUN,sum(JUL) JUL,sum(AUG) AUG,sum(SEP) SEP,sum(OCT) OCT,sum(NOV) NOV,sum(DECEM) DECE, Concat(Sum(JAN) , "," , sum(FEB) , "," ,sum(MAR),",",sum(APR),",",sum(MAY),",",sum(JUN),",",sum(JUL),",",sum(AUG),",", sum(SEP) ,",",sum(OCT),",",sum(NOV),",",sum(DECEM)) Data,state_id State from (Select Year, Case when Month=1 Then 1 else 0 END JAN, Case when Month=2 Then 1 else 0 END FEB, Case when Month=3 Then 1 else 0 END MAR, Case when Month=4 Then 1 else 0 END APR, Case when Month=5 Then 1 else 0 END MAY, Case when Month=6 Then 1 else 0 END JUN, Case when Month=7 Then 1 else 0 END JUL, Case when Month=8 Then 1 else 0 END AUG, Case when Month=9 Then 1 else 0 END SEP, Case when Month=10 Then 1 else 0 END OCT, Case when Month=11 Then 1 else 0 END NOV, Case when Month=12 Then 1 else 0 END DECEM, state_id from  (select  Month(created_at) Month ,Year(created_at) Year ,state_id from BasicArticle_articles where id in (select article_id from Community_communityarticles where user_id=%s) or id in (select article_id from Group_grouparticles where user_id=%s)) T ) P group by Year,state_id having Year=%s;',
@@ -119,7 +104,7 @@ def user_dashboard(request):
         for a in articlescontributed:
             total = total + ',' + a
         total=total[1:]
-        return render(request, 'userdashboard.html', {'communities': communities, 'groups':groups, 'commarticles':commarticles, 'grparticles':grparticles, 'pendingcommunities':pendingcommunities,'articlescontributed':list(articlescontributed),'articlespublished':articlespublished, 'total':total, 'user_profile':user_profile ,'yearby':yearby,'number':number})
+        return render(request, 'userdashboard.html', {'mycommunities':mycommunities, 'mygroups':mygroups, 'commarticles':commarticles, 'grparticles':grparticles, 'pendingcommunities':pendingcommunities,'articlescontributed':list(articlescontributed),'articlespublished':articlespublished, 'total':total, 'user_profile':user_profile, 'grpinvitations':grpinvitations})
     else:
         return redirect('login')
 
@@ -225,3 +210,11 @@ def favourites(request):
                 obj = favourite.objects.filter(user = user, resource = resource_id, category= category).delete()
                 return HttpResponse('removed')
         return HttpResponse('ok')
+
+@csrf_exempt
+def group_invitations(request):
+    userid = request.GET.get('userid', None)
+    user = User.objects.get(id=userid)
+    grpinvitations = GroupInvitations.objects.filter(status='Invited', user=user).values('id', 'status', 'group__name', 'group__id', 'group__image')
+    grpinvitations_list = list(grpinvitations)
+    return JsonResponse(grpinvitations_list, safe=False)

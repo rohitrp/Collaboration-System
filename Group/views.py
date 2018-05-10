@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import Http404, HttpResponse
-from .models import Group, GroupMembership, GroupArticles
+from .models import Group, GroupMembership, GroupArticles, GroupInvitations
 from BasicArticle.models import Articles
 from BasicArticle.views import create_article, view_article
 from Community.models import CommunityMembership, CommunityGroups
@@ -33,6 +33,7 @@ def create_group(request):
 		return group
 
 def group_view(request, pk):
+	invitereceived = 'FALSE'
 	try:
 		message = 0
 		group = Group.objects.get(pk=pk)
@@ -45,6 +46,10 @@ def group_view(request, pk):
 				message = 1
 	except GroupMembership.DoesNotExist:
 		membership = 'FALSE'
+		try:
+			invitereceived = GroupInvitations.objects.filter(user=uid, group=group, status='Invited')
+		except GroupInvitations.DoesNotExist:
+			invitereceived = 'FALSE'
 	try:
 		community = CommunityGroups.objects.get(group=pk)
 		communitymembership = CommunityMembership.objects.get(user =uid, community = community.community.pk)
@@ -56,7 +61,7 @@ def group_view(request, pk):
 	users = GroupArticles.objects.raw('select  u.id,username from auth_user u join Group_grouparticles g on u.id = g.user_id where g.group_id=%s group by u.id order by count(*) desc limit 2;', [pk])
 	contributors = GroupMembership.objects.filter(group = pk)
 	othergroups = CommunityGroups.objects.filter(community = community.community.pk)
-	return render(request, 'groupview.html', {'group': group, 'communitymembership':communitymembership,'membership':membership, 'subscribers':subscribers, 'contributors':contributors, 'users':users, 'community':community,'message':message,'pubarticles':pubarticles,'pubarticlescount':pubarticlescount, 'othergroups':othergroups})
+	return render(request, 'groupview.html', {'group': group, 'communitymembership':communitymembership,'membership':membership, 'subscribers':subscribers, 'contributors':contributors, 'users':users, 'community':community,'message':message,'pubarticles':pubarticles,'pubarticlescount':pubarticlescount, 'othergroups':othergroups, 'invitereceived':invitereceived})
 
 def group_subscribe(request):
 	if request.user.is_authenticated:
@@ -135,10 +140,9 @@ def manage_group(request,pk):
 								is_community_member = CommunityMembership.objects.get(user=user, community=community.community.pk)
 								try:
 									is_member = GroupMembership.objects.get(user=user, group=group.pk)
-								except GroupMembership.DoesNotExist:
-									obj = GroupMembership.objects.create(user=user, group=group, role=role)
-								else:
 									errormessage = 'user exists in group'
+								except GroupMembership.DoesNotExist:
+									errormessage = inviteUser(request, group, user, role)
 							except CommunityMembership.DoesNotExist:
 								errormessage = 'user is not a part of the community'
 						if status == 'update':
@@ -171,6 +175,21 @@ def manage_group(request,pk):
 			return redirect('group_view',pk=pk)
 	else:
 		return redirect('login')
+
+def inviteUser(request, group, user, role):
+	if(isInvited(group, user)):
+		errormessage = user.username + ' is already invited to join this group'
+	else:
+		grpinvite = GroupInvitations.objects.create(invitedby=request.user, user=user, role=role, status='Invited', group=group)
+		errormessage = 'invitation sent sucessfully to ' + user.username
+	return errormessage
+
+def isInvited(group, user):
+	try:
+		is_invited = GroupInvitations.objects.get(user=user, group=group.pk, status='Invited')
+		return True
+	except GroupInvitations.DoesNotExist:
+		return False
 
 def update_group_info(request,pk):
 	if request.user.is_authenticated:
@@ -225,3 +244,20 @@ def group_content(request, pk):
 	except GroupMembership.DoesNotExist:
 		return redirect('group_view', group.pk)
 	return render(request, 'groupcontent.html', {'group': group, 'membership':membership, 'grparticles':grparticles})
+
+def handle_group_invitations(request):
+	if request.method == 'POST':
+		pk = int(request.POST['pk'])
+		grpinivtation=GroupInvitations.objects.get(pk=pk)
+		status = request.POST['status']
+
+		if status=='Accept' and grpinivtation.status!='Accepted':
+			grpmmbership = GroupMembership.objects.create(user=grpinivtation.user, group=grpinivtation.group, role=grpinivtation.role)
+			grpinivtation.status = 'Accepted'
+			grpinivtation.save()
+
+		if status=='Reject' and grpinivtation.status!='Rejected':
+			grpinivtation.status = 'Rejected'
+			grpinivtation.save()
+
+		return redirect('user_dashboard')

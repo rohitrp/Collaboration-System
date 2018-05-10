@@ -28,6 +28,7 @@
 </ul>
 <br/>
 
+{% if membership.role or group.visibility == 1 %}
 <div class="main">
   <div class="container">
     <!-- BEGIN SIDEBAR & CONTENT -->
@@ -47,7 +48,14 @@
                   {%endif%}
                 </div>
                 <div class="col-md-8 col-sm-8">
-                  <h2> {{ group.name}} </h2>
+                  <h2>
+                    {% if group.visibility == 0 %}
+                      <i class="fa fa-lock" style="color: #E84D1C;" ></i>
+                    {% else %}
+                      <i class="fa fa-unlock" style="color: #E84D1C;" ></i>
+                    {% endif %}
+                    {{ group.name}}
+                  </h2>
                   <ul class="blog-info">
                     <li><i class="fa fa-institution"></i>Since: {{group.created_at.date}}</li>
                     <li><i class="fa fa-users"></i> {{subscribers}} Members </li>
@@ -101,6 +109,7 @@
       <span>Please join the <a href="{% url 'community_view' community.community.pk %}"> {{ community.community.name }} </a> </span>
       {% else %}
       {% if membership == 'FALSE' %}
+         {% if invitereceived == 'FALSE' %}
       <b> <form id = "subscribe" method = "post" action ="{% url 'group_subscribe' %}">
         <div class="form-group">
               {% csrf_token %}
@@ -110,6 +119,16 @@
         <button type="submit" class="btn btn-primary"><i class="fa fa-sign-in margin-right-10"></i>Join Us</button>
       </form>
     </b>
+        {% else %}
+        {% for invite in invitereceived %}
+          <form method="post" action="{% url 'handle_group_invitations' %}">
+               {% csrf_token %}
+               <input type='hidden' name = 'pk' value ={{invite.pk}} />
+               <button type="radio" name ="status" value="Accept" class="btn btn-success" >Accept Invitation </button>
+               <button type="radio" name ="status" value="Reject" class="btn btn-danger"> Reject Invitation </button>
+          </form>
+        {% endfor %}
+        {% endif %}
     {%else%}
     <b>
 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo"><i class="fa fa-sign-out margin-right-10"></i>Unsubscribe</button>
@@ -252,4 +271,7 @@
 
 </div> <!-- END CONTAINER -->
 </div> <!-- END MAIN -->
+{% else %}
+    <h1><i class="fa fa-lock" style="color: #E84D1C;" ></i>This is a private group</h1>
+{% endif %}
 {% endblock %}

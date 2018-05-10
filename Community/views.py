@@ -54,7 +54,7 @@ def community_view(request, pk):
 	pubarticles = CommunityArticles.objects.raw('select ba.id, ba.body, ba.title, workflow_states.name as state from  workflow_states, BasicArticle_articles as ba , Community_communityarticles as ca  where ba.state_id=workflow_states.id and  ca.article_id =ba.id and ca.community_id=%s and ba.state_id in (select id from workflow_states as w where w.name = "publish");', [community.pk])
 	pubarticlescount = len(list(pubarticles))
 	users = CommunityArticles.objects.raw('select  u.id,username from auth_user u join Community_communityarticles c on u.id = c.user_id where c.community_id=%s group by u.id order by count(*) desc limit 2;', [pk])
-	groups = CommunityGroups.objects.filter(community = pk)
+	groups = CommunityGroups.objects.filter(community = pk, group__visibility='1')
 	groupcount = groups.count()
 	communitymem=CommunityMembership.objects.filter(community = pk).order_by('?')[:10]
 	return render(request, 'communityview.html', {'community': community, 'membership':membership, 'subscribers':subscribers, 'groups':groups, 'users':users, 'groupcount':groupcount, 'pubarticlescount':pubarticlescount, 'message':message, 'pubarticles':pubarticles, 'communitymem':communitymem})
@@ -369,7 +369,7 @@ def community_content(request, pk):
 		membership = CommunityMembership.objects.get(user=uid, community=community.pk)
 		if membership:
 			carticles = CommunityArticles.objects.raw('select "article" as type, ba.id, ba.title, ba.body, ba.image, ba.views, ba.created_at, username, workflow_states.name as state from  workflow_states, auth_user au, BasicArticle_articles as ba , Community_communityarticles as ca  where au.id=ba.created_by_id and ba.state_id=workflow_states.id and  ca.article_id =ba.id and ca.community_id=%s and ba.state_id in (select id from workflow_states as w where w.name = "visible" or w.name="publishable");', [community.pk])
-			ccourse = CommunityCourses.objects.raw('select "course" as type, course.id, course.title, course.body, course.created_at, username from Course_course as course, Community_communitycourses as ccourses, auth_user au where au.id=course.created_by_id and course.id=ccourses.course_id and ccourses.community_id=%s;', [community.pk])
+			ccourse = CommunityCourses.objects.raw('select "course" as type, course.id, course.title, course.body, course.image, course.created_at, username from Course_course as course, Community_communitycourses as ccourses, auth_user au where au.id=course.created_by_id and course.id=ccourses.course_id and ccourses.community_id=%s;', [community.pk])
 			lstfinal = list(carticles) + list(ccourse)
 
 			page = request.GET.get('page', 1)
@@ -392,7 +392,7 @@ def community_group_content(request, pk):
 		uid = request.user.id
 		membership = CommunityMembership.objects.get(user=uid, community=community.pk)
 		if membership:
-			cgarticles = CommunityGroups.objects.raw('select username, bs.id, bs.title, bs.body, bs.image, bs.views, bs.created_at, gg.name from auth_user au, BasicArticle_articles bs join (select * from Group_grouparticles where group_id in (select group_id from Community_communitygroups where community_id=%s)) t on bs.id=t.article_id join Group_group gg on gg.id=group_id where bs.state_id=2 and au.id=bs.created_by_id;', [community.pk])
+			cgarticles = CommunityGroups.objects.raw('select username, bs.id, bs.title, bs.body, bs.image, bs.views, bs.created_at, gg.name from auth_user au, BasicArticle_articles bs join (select * from Group_grouparticles where group_id in (select group_id from Community_communitygroups where community_id=%s)) t on bs.id=t.article_id join Group_group gg on gg.id=group_id and gg.visibility=1 where bs.state_id=2 and au.id=bs.created_by_id;', [community.pk])
 			page = request.GET.get('page', 1)
 			paginator = Paginator(list(cgarticles), 5)
 			try:
