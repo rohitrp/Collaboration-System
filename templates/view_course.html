@@ -50,11 +50,8 @@ background-color:#FE642E;
 
         <ul >
             {% recursetree topics %}
-                <li><a href="#" ><form id="viewresources" method="post" action="{% url 'course_view' course.course.pk %}">
-                  {% csrf_token %}
-                 <input type="hidden" id="nodeid" name="nodeid" value = {{node.id}} >
-                  <input type="submit" class="btn btn-link" value =" {{node.name}} ">
-                </form>
+                <li><a class = "topics" href="#" >
+                  <input type="button" value="{{node.name}}" id="{{node.id}}" class="btn-link"/>
                     </a>
                     {% if not node.is_leaf_node %}
                         <ul class="children">
@@ -68,22 +65,31 @@ background-color:#FE642E;
         </div>
     </div>
     <div class="col-sm-8">
- <nav id="menu" class="nav-main">
-<ul class="nav nav-pills nav-justified inverse" style=" overflow: auto;
-    white-space: nowrap;">
-    {% for links in links %}
-    {% if links.types == 'Youtube' %}
-  <li role="presentation" ><a href="{{links.link}}" target="frame1"><i  class="fa fa-youtube" style="font-size: 20px;"></i></a></li>
-  {% else %}
-  <li role="presentation" ><a href="{{link.link}}" target="frame1"><i  class="fa fa-link" style="font-size: 20px;"></i></a></li>
-  {%endif%}
-{% endfor %}
-  </ul>
- </nav>
+ 
+    <div >
+      <ul  id = "list" class="nav nav-tabs">
+
+
+
+  
+      </ul>
+
+    </div>
+    <div id= "collection" class="tab-content">
+
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title">{{ course.course.title }}</h5>
+          <blockquote class="blockquote mb-0">
+                <p>{{ course.course.body | safe }}</p>
+                <footer class="blockquote-footer">Created by: {{course.course.created_by}} </footer>
+              </blockquote>
+        </div>
+      </div>
+
     </div>
     <br />
-   <iframe width="560" height="315" src="{{link.link}}" name="frame1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-   {{link.desc}}
+   
   </div>
 </div>
 
@@ -95,6 +101,79 @@ background-color:#FE642E;
             $(document).ready(function() {
                 $('.demo').ntm();
             });
+        </script>
+        <script  type="text/javascript">
+
+                $(".btn-link").click(function(){
+
+                  var id = $(this).attr('id');
+                  var url = "/api/course/topics/links/" + id;
+                  //var url = "{% url 'home' %}" + "api/course/topics/links" +links; 
+                  $("#list").empty();
+                  $("#collection").empty();
+                  $.ajax({
+                          url: url,
+                          type: 'get',
+                          cache: false,
+                          success: function(data){
+                             var count = 1;
+                              for(i in data){
+                                  links = data[i];
+                                  if(links['types'] == 'Youtube'){
+
+                                    if (count == 1){
+                                      var list = '<li class="nav-item active"><a class="nav-link " data-toggle="tab" href="#tab' + links['id'] + '"> <i  class="fa fa-youtube" style="font-size: 20px;"></i></a></li>'
+                                      var listcollection = '<div class="tab-pane row fade in active" id="tab'+links['id'] +  '"><iframe width="560" height="315" src=" ' + links['link'] +'" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>'
+                                      count++;
+                                    } else {
+
+                                      var list = '<li class="nav-item "><a class="nav-link " data-toggle="tab" href="#tab' + links['id'] + '"> <i  class="fa fa-youtube" style="font-size: 20px;"></i></a></li>'
+
+                                     var listcollection = '<div class="tab-pane row fade in " id="tab'+links['id'] +  '"><iframe width="560" height="315" src=" ' + links['link'] +'" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>'
+
+                                    }
+
+                                  $("#list").append(list);
+                                  $("#collection").append(listcollection);
+                                  }
+
+                                  if(links['types'] == 'External'){
+
+                                    if (count ==1){
+
+                                      var list = '<li class="nav-item active"><a class="nav-link " data-toggle="tab" href="#tab' + links['id'] + '"> <i  class="fa fa-link" style="font-size: 20px;"></i></a></li>'
+                                 
+                                  var listcollection = '<div class="tab-pane row fade in active" id="tab'+links['id'] +  '"><iframe width="560" height="315" src=" ' + links['link'] +'"></iframe></div>'
+                                      count++;
+                                    }
+                                      else
+
+                                    {
+
+                                    var list = '<li class="nav-item "><a class="nav-link " data-toggle="tab" href="#tab' + links['id'] + '"> <i  class="fa fa-link" style="font-size: 20px;"></i></a></li>'
+                                 
+                                  var listcollection = '<div class="tab-pane row fade in " id="tab'+links['id'] +  '"><iframe width="560" height="315" src=" ' + links['link'] +'"></iframe></div>'
+
+                                    }
+
+                                   $("#list").append(list);
+                                  $("#collection").append(listcollection);
+
+
+                                  }
+                                  //for loop ends here
+                                  }
+
+                          }
+
+                        
+
+                        });
+    
+            });
+                
+
+
         </script>
 
 {% endblock %}
